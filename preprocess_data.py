@@ -1,11 +1,12 @@
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader
 from load_data import train_dataset, test_dataset
 import transformers
 from dataset import ClipDataset
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu") # gpu memory limits
 
 path = "openai/clip-vit-base-patch32"
 tokenizer = transformers.CLIPTokenizer.from_pretrained(path) # for debugging only
