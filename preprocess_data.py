@@ -30,20 +30,20 @@ def preprocess_data(split):
             images = batch["pixel_values"].to(device)
             captions = batch["input_ids"].to(device)
             masks = batch["attention_mask"].to(device)
-            special_tokens_mask = batch["special_tokens_mask"].to(device)
-            cleaned_masks = masks * (1 - special_tokens_mask)
+            # special_tokens_mask = batch["special_tokens_mask"].to(device)
+            # cleaned_masks = masks * (1 - special_tokens_mask)
 
             outputs = model.vision_model(images)
 
             image_embeddings.append(outputs.last_hidden_state[:, 1:, :]) # Remove CLS token
             token_ids.append(captions)
-            attention_masks.append(cleaned_masks)
+            attention_masks.append(masks)
 
             if i == 0:
                 sample_ids = captions[0].tolist()
                 decoded = tokenizer.decode(sample_ids, skip_special_tokens=False)
                 print("Decoded caption with special tokens:", decoded)
-                print("Attention mask:", cleaned_masks[0])
+                print("Attention mask:", masks[0])
             
             if i % 10 == 0:
                 print(f"Processed batch {i}/{len(dataloader)}")
