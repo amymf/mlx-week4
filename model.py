@@ -65,7 +65,7 @@ class TransformerDecoderFlickr(torch.nn.Module):
 
         # resize padding mask - do not mask image patches
         num_patches = image_embed.size(1)
-        token_padding_mask = ~token_padding_mask.bool() # True for padding tokens
+        token_padding_mask = ~token_padding_mask.bool() # Flip to True for padding tokens
         patch_padding_mask = torch.zeros(
             (token_padding_mask.size(0), num_patches),
             dtype=torch.bool,
