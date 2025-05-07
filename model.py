@@ -45,7 +45,7 @@ class TransformerDecoderFlickr(torch.nn.Module):
     def __init__(self, vocab_size, max_len, d_model, nhead, num_decoder_layers):
         super(TransformerDecoderFlickr, self).__init__()
         self.img_projector = torch.nn.Linear(768, d_model)
-        self.embedding = torch.load("clip_text_embedding_layer.pt", weights_only=False)
+        self.embedding = torch.load("clip_text_embedding_layer_with_pad.pt", weights_only=False)
         self.decoder = TransformerDecoder(max_len, d_model, nhead, num_decoder_layers)
         self.fc_out = torch.nn.Linear(d_model, vocab_size)
 

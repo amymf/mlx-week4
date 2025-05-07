@@ -9,7 +9,7 @@ wandb.init(project="flickr30k-captioning")
 torch.manual_seed(42)  # For reproducibility
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-train_dataset = Flickr30kDataset("flickr30k_embeddings-train.pt")
+train_dataset = Flickr30kDataset("flickr30k_embeddings-train-with-pad.pt")
 train_size = int(0.9 * len(train_dataset))
 val_size = len(train_dataset) - train_size
 train_dataset, val_dataset = torch.utils.data.random_split(

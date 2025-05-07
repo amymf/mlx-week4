@@ -20,9 +20,9 @@ class ClipDataset(torch.utils.data.Dataset):
             padding="max_length",
             truncation=True,
             max_length=77,
-            return_special_tokens_mask=True,
+            # return_special_tokens_mask=True,
         )
-        # return input_ids, attention_mask, pixel_values, special_tokens_mask
+        # return input_ids, attention_mask, pixel_values
         return {k: v.squeeze(0) for k, v in processed.items()}  # squeeze batch dim
 
 
