@@ -21,7 +21,7 @@ train_dataloader = torch.utils.data.DataLoader(
 val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=32, shuffle=False)
 
 model = TransformerDecoderFlickr(
-    vocab_size=49408,  # vocab size of CLIP tokenizer
+    vocab_size=49409,  # vocab size of CLIP tokenizer + 1 for new pad token
     max_len=126,  # 77 tokens + 49 image patches
     d_model=512,  # CLIP text embedding size
     nhead=8,

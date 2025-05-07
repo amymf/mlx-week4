@@ -19,7 +19,7 @@ start_token_id = 49406
 end_token_id = 49407
 
 model = TransformerDecoderFlickr(
-    vocab_size=49408,  # vocab size of CLIP tokenizer
+    vocab_size=49409,  # vocab size of CLIP tokenizer + 1 for new pad token
     max_len=126,  # 77 tokens + 49 image patches
     d_model=512,  # CLIP text embedding size
     nhead=8,
