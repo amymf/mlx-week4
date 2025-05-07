@@ -73,7 +73,7 @@ class TransformerDecoderFlickr(torch.nn.Module):
         ) # False for image patches - do not mask
         padding_mask = torch.cat((patch_padding_mask, token_padding_mask), dim=1)
         
-        attn_mask = self.create_causal_mask(x, num_patches)
+        attn_mask = self.create_causal_mask(x, num_patches).to(padding_mask.device)
         x = self.decoder(x, padding_mask=padding_mask, attn_mask=attn_mask)
         x = self.fc_out(x)
         return x # [batch_size, seq_len + num_patches, vocab_size]
