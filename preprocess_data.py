@@ -96,7 +96,5 @@ def preprocess_data(split):
 
 
 if __name__ == "__main__":
-    # Preprocess train data
     preprocess_data("train")
-    # Preprocess test data
     preprocess_data("test")

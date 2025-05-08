@@ -29,14 +29,13 @@ model = TransformerDecoderFlickr(
     num_decoder_layers=6,
 ).to(device)
 
-optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
-
-criterion = torch.nn.CrossEntropyLoss(ignore_index=1)  # Ignore padding tokens
-
 tokenizer = CLIPTokenizer.from_pretrained("clip_tokenizer_with_pad")
 pad_token_id = 49408
 start_token_id = tokenizer.bos_token_id
 end_token_id = tokenizer.eos_token_id
+
+optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
+criterion = torch.nn.CrossEntropyLoss(ignore_index=pad_token_id)  # Ignore padding tokens
 
 num_epochs = 10
 for epoch in range(num_epochs):
@@ -84,13 +83,14 @@ for epoch in range(num_epochs):
                         out = model(image_embeddings[j:j+1], inp, mask)
                         next_token_logits = out[:, num_patches + len(generated) - 1, :]
                         next_token = next_token_logits.argmax(dim=-1).item()
+                        generated.append(next_token)
                         if next_token == end_token_id:
                             break
-                        generated.append(next_token)
-
-                    decoded = tokenizer.decode(generated[1:], skip_special_tokens=True)
-                    wandb.log({f"val_caption_{j}": decoded})
-                    print(f"Sample {j} caption: {decoded}")
+                    decoded = tokenizer.decode(generated, skip_special_tokens=False)
+                    reference = tokenizer.decode([token for token in input_ids[j].tolist() if token != pad_token_id], skip_special_tokens=False)
+                    print(f"Reference {j} caption: {reference}")
+                    print(f"Generated {j} caption: {decoded}")
+                    wandb.log({"reference_caption": reference, "sample_caption": decoded})
 
     train_loss /= len(train_dataloader)
     val_loss /= len(val_dataloader)

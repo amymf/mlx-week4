@@ -49,12 +49,16 @@ class TransformerDecoderFlickr(torch.nn.Module):
         self.decoder = TransformerDecoder(max_len, d_model, nhead, num_decoder_layers)
         self.fc_out = torch.nn.Linear(d_model, vocab_size)
 
-    def create_causal_mask(self, x, num_patches):
-        # sequence length is the sum of image patches and token ids
-        seq_len = x.size(1)
-        attn_mask = torch.triu(torch.ones(seq_len, seq_len) * float("-inf"), diagonal=1)
-        attn_mask[:, num_patches:] = 0
+    def create_causal_mask(self, total_len, num_patches):
+        attn_mask = torch.zeros(total_len, total_len)
+
+        # Apply causal mask only to the caption part
+        caption_len = total_len - num_patches
+        causal_part = torch.triu(torch.ones(caption_len, caption_len) * float('-inf'), diagonal=1)
+        
+        attn_mask[num_patches:, num_patches:] = causal_part
         return attn_mask
+
 
     def forward(self, image_embed, token_ids, token_padding_mask):
         image_embed = self.img_projector(image_embed)
@@ -73,7 +77,7 @@ class TransformerDecoderFlickr(torch.nn.Module):
         ) # False for image patches - do not mask
         padding_mask = torch.cat((patch_padding_mask, token_padding_mask), dim=1)
         
-        attn_mask = self.create_causal_mask(x, num_patches).to(padding_mask.device)
+        attn_mask = self.create_causal_mask(x.size(1), num_patches).to(padding_mask.device)
         x = self.decoder(x, padding_mask=padding_mask, attn_mask=attn_mask)
         x = self.fc_out(x)
         return x # [batch_size, seq_len + num_patches, vocab_size]
