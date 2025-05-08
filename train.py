@@ -33,6 +33,7 @@ tokenizer = CLIPTokenizer.from_pretrained("clip_tokenizer_with_pad")
 pad_token_id = 49408
 start_token_id = tokenizer.bos_token_id
 end_token_id = tokenizer.eos_token_id
+tokenizer.pad_token_id = pad_token_id
 
 optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
 criterion = torch.nn.CrossEntropyLoss(ignore_index=pad_token_id)  # Ignore padding tokens

@@ -28,6 +28,7 @@ tokenizer = CLIPTokenizer.from_pretrained("clip_tokenizer_with_pad")
 pad_token_id = 49408
 start_token_id = tokenizer.bos_token_id
 end_token_id = tokenizer.eos_token_id
+tokenizer.pad_token_id = pad_token_id
 
 criterion = torch.nn.CrossEntropyLoss(ignore_index=pad_token_id)  # Ignore padding tokens
 
@@ -45,12 +46,20 @@ with torch.no_grad():
         # Compute loss
         num_patches = image_embeddings.size(1)
         logits = outputs[:, num_patches:, :]
-        loss = criterion(logits.reshape(-1, logits.size(-1)), input_ids.reshape(-1))
+        target_ids = input_ids[:, 1:]         # Remove <BOS>, e.g., what the model should predict
+        logits = logits[:, :-1, :]            # Exclude last logit, since there's no target for it
 
+        loss = criterion(
+            logits.reshape(-1, logits.size(-1)), 
+            target_ids.reshape(-1)
+        )
+        
         # Compute accuracy
-        pad_mask = input_ids != pad_token_id
+        pad_mask = target_ids != pad_token_id
         _, predicted = torch.max(logits, dim=-1)
-        correct += ((predicted == input_ids) & pad_mask).sum().item()
+        # print(f"example predicted: {predicted[0]}")
+        # print(f"example target: {target_ids[0]}")
+        correct += ((predicted == target_ids) & pad_mask).sum().item()
         total += pad_mask.sum().item()
 
         if i == 0:
@@ -67,7 +76,7 @@ with torch.no_grad():
                     generated.append(next_token)
 
                 decoded = tokenizer.decode(generated[1:], skip_special_tokens=True)
-                reference = tokenizer.decode([token for token in input_ids[j].tolist() if token != pad_token_id], skip_special_tokens=True)
+                reference = tokenizer.decode([token for token in target_ids[j].tolist() if token != pad_token_id], skip_special_tokens=True)
                 print(f"Reference {j} caption: {reference}")
                 print(f"Sample {j} caption: {decoded}")
                 wandb.log({"reference_caption": reference, "sample_caption": decoded})
