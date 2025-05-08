@@ -3,6 +3,7 @@ import torch
 from model import TransformerDecoderFlickr
 from tqdm import tqdm
 from dataset import Flickr30kDataset
+from transformers import CLIPTokenizer
 
 wandb.init(project="flickr30k-captioning")
 
@@ -32,6 +33,11 @@ optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
 
 criterion = torch.nn.CrossEntropyLoss(ignore_index=1)  # Ignore padding tokens
 
+tokenizer = CLIPTokenizer.from_pretrained("clip_tokenizer_with_pad")
+pad_token_id = 49408
+start_token_id = tokenizer.bos_token_id
+end_token_id = tokenizer.eos_token_id
+
 num_epochs = 10
 for epoch in range(num_epochs):
     model.train()
@@ -58,7 +64,7 @@ for epoch in range(num_epochs):
     model.eval()
     val_loss = 0.0
     with torch.no_grad():
-        for batch in val_dataloader:
+        for idx, batch in enumerate(val_dataloader):
             image_embeddings = batch["image_embeddings"].to(device)
             input_ids = batch["input_ids"].to(device)
             attention_masks = batch["attention_masks"].to(device)
@@ -68,6 +74,23 @@ for epoch in range(num_epochs):
             logits = outputs[:, num_patches:, :]
             loss = criterion(logits.reshape(-1, logits.size(-1)), input_ids.reshape(-1))
             val_loss += loss.item()
+
+            if idx == 0:
+                for j in range(min(3, image_embeddings.size(0))):  # log a few
+                    generated = [start_token_id]
+                    for _ in range(76):  # max token length
+                        inp = torch.tensor(generated, device=device).unsqueeze(0)
+                        mask = torch.ones_like(inp, dtype=torch.bool)
+                        out = model(image_embeddings[j:j+1], inp, mask)
+                        next_token_logits = out[:, num_patches + len(generated) - 1, :]
+                        next_token = next_token_logits.argmax(dim=-1).item()
+                        if next_token == end_token_id:
+                            break
+                        generated.append(next_token)
+
+                    decoded = tokenizer.decode(generated[1:], skip_special_tokens=True)
+                    wandb.log({f"val_caption_{j}": decoded})
+                    print(f"Sample {j} caption: {decoded}")
 
     train_loss /= len(train_dataloader)
     val_loss /= len(val_dataloader)

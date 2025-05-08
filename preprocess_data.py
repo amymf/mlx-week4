@@ -45,13 +45,13 @@ def preprocess_data(split):
     image_embeddings = []
     token_ids = []
     attention_masks = []
+    image_ids = []
     with torch.no_grad():
         for i, batch in enumerate(dataloader):
             images = batch["pixel_values"].to(device)
             captions = batch["input_ids"].to(device)
             masks = batch["attention_mask"].to(device)
-            # special_tokens_mask = batch["special_tokens_mask"].to(device)
-            # cleaned_masks = masks * (1 - special_tokens_mask)
+            image_ids = batch["img_id"]
 
             # Replace tokens after the first <eos> token with the new <pad> token
             eos_token_id = tokenizer.eos_token_id
@@ -78,6 +78,7 @@ def preprocess_data(split):
                 decoded = tokenizer.decode(sample_ids, skip_special_tokens=False)
                 print("Decoded caption with special tokens:", decoded)
                 print("Attention mask:", masks[0])
+                print("Image ID:", image_ids[0])
 
             if i % 10 == 0:
                 print(f"Processed batch {i}/{len(dataloader)}")
@@ -87,6 +88,7 @@ def preprocess_data(split):
             "image_embeddings": torch.cat(image_embeddings, dim=0),
             "input_ids": torch.cat(token_ids, dim=0),
             "attention_masks": torch.cat(attention_masks, dim=0),
+            "image_ids": image_ids
         },
         f"flickr30k_embeddings-{split}-with-pad.pt",
     )
