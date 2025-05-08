@@ -54,7 +54,15 @@ for epoch in range(num_epochs):
         # Compute loss
         num_patches = image_embeddings.size(1)
         logits = outputs[:, num_patches:, :]
-        loss = criterion(logits.reshape(-1, logits.size(-1)), input_ids.reshape(-1))
+
+        target_ids = input_ids[:, 1:]         # Remove <BOS>, e.g., what the model should predict
+        logits = logits[:, :-1, :]            # Exclude last logit, since there's no target for it
+
+        loss = criterion(
+            logits.reshape(-1, logits.size(-1)), 
+            target_ids.reshape(-1)
+        )
+
         loss.backward()
         optimizer.step()
 
@@ -71,7 +79,14 @@ for epoch in range(num_epochs):
             outputs = model(image_embeddings, input_ids, attention_masks)
             num_patches = image_embeddings.size(1)
             logits = outputs[:, num_patches:, :]
-            loss = criterion(logits.reshape(-1, logits.size(-1)), input_ids.reshape(-1))
+
+            target_ids = input_ids[:, 1:]         # Remove <BOS>, e.g., what the model should predict
+            logits = logits[:, :-1, :]            # Exclude last logit, since there's no target for it
+
+            loss = criterion(
+                logits.reshape(-1, logits.size(-1)), 
+                target_ids.reshape(-1)
+            )
             val_loss += loss.item()
 
             if idx == 0:
@@ -80,6 +95,7 @@ for epoch in range(num_epochs):
                     for _ in range(76):  # max token length
                         inp = torch.tensor(generated, device=device).unsqueeze(0)
                         mask = torch.ones_like(inp, dtype=torch.bool)
+                        mask[:, :] = inp != pad_token_id  # Set padding tokens to False (ignore in attention)
                         out = model(image_embeddings[j:j+1], inp, mask)
                         next_token_logits = out[:, num_patches + len(generated) - 1, :]
                         next_token = next_token_logits.argmax(dim=-1).item()
