@@ -5,27 +5,24 @@ import torch.nn as nn
 class DecoderLayer(torch.nn.Module):
     def __init__(self, d_model, nhead):
         super(DecoderLayer, self).__init__()
-        self.self_attn = torch.nn.MultiheadAttention(d_model, nhead, batch_first=True)
-        self.dropout1 = torch.nn.Dropout(0.1)
         self.layer_norm1 = torch.nn.LayerNorm(d_model)
+        self.self_attn = torch.nn.MultiheadAttention(d_model, nhead, batch_first=True)
+        self.layer_norm2 = torch.nn.LayerNorm(d_model)
         self.ffn = torch.nn.Sequential(
             torch.nn.Linear(d_model, d_model * 4),
             torch.nn.ReLU(),
-            torch.nn.Dropout(0.1),
             torch.nn.Linear(d_model * 4, d_model),
         )
-        self.dropout2 = torch.nn.Dropout(0.1)
-        self.layer_norm2 = torch.nn.LayerNorm(d_model)
 
     def forward(self, x, padding_mask, attn_mask):
         x = self.layer_norm1(x)
         attn_output, _ = self.self_attn(
             x, x, x, attn_mask=attn_mask, key_padding_mask=padding_mask
         )
-        x = x + self.dropout1(attn_output)
+        x = x + attn_output
         x = self.layer_norm2(x)
         ffn_output = self.ffn(x)
-        x = x + self.dropout2(ffn_output)
+        x = x + ffn_output
         return x
 
 
@@ -33,19 +30,14 @@ class TransformerDecoder(nn.Module):
     def __init__(self, max_len, d_model, nhead, num_decoder_layers):
         super(TransformerDecoder, self).__init__()
         self.positional_encoding = nn.Parameter(torch.randn(1, max_len, d_model))
-        self.dropout = nn.Dropout(0.1)
         self.layers = torch.nn.ModuleList(
             [DecoderLayer(d_model, nhead) for _ in range(num_decoder_layers)]
         )
-        self.layer_norm = torch.nn.LayerNorm(d_model)
 
     def forward(self, x, padding_mask, attn_mask):
-        # x: [batch_size, seq_len + num_patches, d_model]
-        x = x + self.positional_encoding[:, : x.size(1)] # slice pos_enc to match the caption length
-        x = self.dropout(x)
+        x = x + self.positional_encoding[:, : x.size(1)]
         for layer in self.layers:
             x = layer(x, padding_mask, attn_mask)
-        x = self.layer_norm(x)
         return x  # [batch_size, seq_len + num_patches, d_model]
 
 

@@ -18,10 +18,8 @@ model.to(device)
 pad_token = "<pad>"
 tokenizer.add_tokens(pad_token)
 new_pad_token_id = tokenizer.convert_tokens_to_ids(pad_token)
-eos_token_id = tokenizer.eos_token_id
-special_tokens = tokenizer.special_tokens_map
-special_tokens['pad_token'] = pad_token
-tokenizer.add_special_tokens(special_tokens)
+tokenizer.pad_token_id = new_pad_token_id
+tokenizer.add_special_tokens({'pad_token': pad_token})
 tokenizer.save_pretrained("clip_tokenizer_with_pad")
 
 # resize embeddings to accommodate new pad token
